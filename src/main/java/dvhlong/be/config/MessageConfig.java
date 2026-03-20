@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 
-import dvhlong.be.constant.AppConstant;
+import dvhlong.be.common.constant.AppConstant;
 
 @Configuration
 public class MessageConfig {

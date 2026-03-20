@@ -1,4 +1,4 @@
-package dvhlong.be.service;
+package dvhlong.be.common.service;
 
 import java.util.Locale;
 

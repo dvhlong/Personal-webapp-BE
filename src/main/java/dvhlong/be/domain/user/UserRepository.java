@@ -1,6 +1,5 @@
-package dvhlong.be.repository;
+package dvhlong.be.domain.user;
 
-import dvhlong.be.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

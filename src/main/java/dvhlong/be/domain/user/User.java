@@ -1,4 +1,4 @@
-package dvhlong.be.entity;
+package dvhlong.be.domain.user;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -19,6 +19,9 @@ public class User {
 
 	@Column(unique = true, nullable = false)
 	private String email;
+
+	@Column(nullable = false)
+	private String name;
 
 	@Column(nullable = false)
 	private String password;

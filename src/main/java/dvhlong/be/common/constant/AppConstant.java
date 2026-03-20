@@ -1,4 +1,4 @@
-package dvhlong.be.constant;
+package dvhlong.be.common.constant;
 
 public final class AppConstant {
 	private AppConstant() {}

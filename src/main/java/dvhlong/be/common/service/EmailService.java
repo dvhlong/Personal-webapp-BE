@@ -1,4 +1,4 @@
-package dvhlong.be.service;
+package dvhlong.be.common.service;
 
 import java.util.Locale;
 
@@ -6,8 +6,8 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import dvhlong.be.constant.AppConstant;
-import dvhlong.be.constant.I18nConstant;
+import dvhlong.be.common.constant.AppConstant;
+import dvhlong.be.common.constant.I18nConstant;
 import lombok.RequiredArgsConstructor;
 
 @Service

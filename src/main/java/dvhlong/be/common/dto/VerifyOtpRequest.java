@@ -1,6 +1,6 @@
-package dvhlong.be.dto;
+package dvhlong.be.common.dto;
 
-import dvhlong.be.constant.AppConstant;
+import dvhlong.be.common.constant.AppConstant;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

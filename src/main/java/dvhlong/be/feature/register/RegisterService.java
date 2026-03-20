@@ -1,10 +1,12 @@
-package dvhlong.be.service;
+package dvhlong.be.feature.register;
 
-import dvhlong.be.constant.AppConstant;
-import dvhlong.be.constant.I18nConstant;
-import dvhlong.be.dto.RegisterRequest;
-import dvhlong.be.entity.User;
-import dvhlong.be.repository.UserRepository;
+import dvhlong.be.common.constant.AppConstant;
+import dvhlong.be.common.constant.I18nConstant;
+import dvhlong.be.common.service.EmailService;
+import dvhlong.be.common.service.MessageService;
+import dvhlong.be.common.service.OtpService;
+import dvhlong.be.domain.user.User;
+import dvhlong.be.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -15,20 +17,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.security.SecureRandom;
 import java.time.Duration;
 import java.util.Locale;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AuthService {
+public class RegisterService {
 
 	private final UserRepository userRepository;
 	private final StringRedisTemplate redisTemplate;
 	private final EmailService emailService;
 	private final PasswordEncoder passwordEncoder;
 	private final MessageService messageService;
-	private static final SecureRandom RANDOM = new SecureRandom();
+	private final OtpService otpService;
 
 	public void register(RegisterRequest request, Locale locale) {
 		if (userRepository.existsByEmail(request.email())) {
@@ -38,10 +39,12 @@ public class AuthService {
 			);
 		}
 
-		String otp = generateOtp();
+		String otp = otpService.generateOtp();
 		redisTemplate.opsForValue().set(
 			AppConstant.OTP_PREFIX + request.email(),
-			passwordEncoder.encode(request.password()) + ":" + otp,
+			passwordEncoder.encode(request.password())
+				+ ":" + otp
+				+ ":" + request.name(),
 			Duration.ofMinutes(AppConstant.OTP_EXPIRY_MINUTES)
 		);
 
@@ -77,6 +80,7 @@ public class AuthService {
 		User user = new User();
 		user.setEmail(email);
 		user.setPassword(parts[0]);
+		user.setName(parts[2]);
 		user.setEnabled(true);
 		userRepository.save(user);
 
@@ -94,22 +98,15 @@ public class AuthService {
 			);
 		}
 
-		String encodedPassword = value.split(":")[0];
-		String newOtp = generateOtp();
+		String[] parts = value.split(":");
+		String encodedPassword = parts[0];
+		String name = parts[2];
+		String newOtp = otpService.generateOtp();
 		redisTemplate.opsForValue().set(key,
-			encodedPassword + ":" + newOtp,
+			encodedPassword + ":" + newOtp + ":" + name,
 			Duration.ofMinutes(AppConstant.OTP_EXPIRY_MINUTES)
 		);
 
 		emailService.sendOtp(email, newOtp, locale);
-	}
-
-	private String generateOtp() {
-		String chars = AppConstant.OTP_ALLOWED_CHARS;
-		StringBuilder otp = new StringBuilder();
-		for (int i = 0; i < AppConstant.OTP_LENGTH; i++) {
-			otp.append(chars.charAt(RANDOM.nextInt(chars.length())));
-		}
-		return otp.toString();
 	}
 }
