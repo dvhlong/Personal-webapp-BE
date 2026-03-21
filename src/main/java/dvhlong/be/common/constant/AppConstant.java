@@ -11,4 +11,8 @@ public final class AppConstant {
 	public static final int OTP_LENGTH = 6;
 	public static final int PASSWORD_MIN_LENGTH = 8;
 
+	public static final String MESSAGE_RESPONSE_FIELD_KEY = "field";
+	public static final String MESSAGE_RESPONSE_CODE_KEY = "code";
+	public static final String MESSAGE_RESPONSE_PARAMS_KEY = "params";
+
 }

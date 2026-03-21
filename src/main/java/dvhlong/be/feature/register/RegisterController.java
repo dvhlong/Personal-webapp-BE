@@ -24,7 +24,7 @@ public class RegisterController {
 
 	@PostMapping("/verify-otp")
 	public ResponseEntity<Void> verifyOtp(@Valid @RequestBody VerifyOtpRequest request, Locale locale) {
-		registerService.verifyOtp(request.email(), request.otp(), locale);
+		registerService.verifyOtp(request.email(), request.otp());
 		return ResponseEntity.ok().build();
 	}
 
