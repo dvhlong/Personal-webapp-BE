@@ -38,12 +38,18 @@ public class RegisterService {
 			throw new ErrorResponseException(HttpStatus.CONFLICT, detail, null);
 		}
 
+		// Store the registration data in Redis
+		redisTemplate.opsForValue().set(
+			AppConstant.REGISTER_PREFIX + request.email(),
+			passwordEncoder.encode(request.password()) + RegisterConstant.REDIS_STR_DELIMITER + request.name(),
+			Duration.ofMinutes(AppConstant.REGISTER_EXPIRY_MINUTES)
+		);
+
+		// Generate OTP and store it in Redis
 		String otp = otpService.generateOtp();
 		redisTemplate.opsForValue().set(
 			AppConstant.OTP_PREFIX + request.email(),
-			passwordEncoder.encode(request.password())
-				+ RegisterConstant.REDIS_STR_DELIMITER + otp
-				+ RegisterConstant.REDIS_STR_DELIMITER + request.name(),
+			otp,
 			Duration.ofMinutes(AppConstant.OTP_EXPIRY_MINUTES)
 		);
 
@@ -57,24 +63,25 @@ public class RegisterService {
 	}
 
 	public void verifyOtp(String email, String otp) {
-		String key = AppConstant.OTP_PREFIX + email;
-		String value = redisTemplate.opsForValue().get(key);
+		String otpKey = AppConstant.OTP_PREFIX + email;
+		String registerKey = AppConstant.REGISTER_PREFIX + email;
 
-		if (value == null) {
-			throw new ResponseStatusException(
-				HttpStatus.BAD_REQUEST,
-				I18nConstant.I18N_ERROR_OTP_EXPIRED
-			);
+		String otpValue = redisTemplate.opsForValue().get(otpKey);
+		String registerValue = redisTemplate.opsForValue().get(registerKey);
+
+		if (otpValue == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, I18nConstant.I18N_ERROR_OTP_EXPIRED);
 		}
 
-		String[] parts = value.split(RegisterConstant.REDIS_STR_DELIMITER);
-		if (!parts[RegisterConstant.REDIS_STR_INDEX_OTP].equals(otp)) {
-			throw new ResponseStatusException(
-				HttpStatus.BAD_REQUEST,
-				I18nConstant.I18N_ERROR_OTP_INVALID
-			);
+		if (!otpValue.equals(otp)) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, I18nConstant.I18N_ERROR_OTP_INVALID);
 		}
 
+		if (registerValue == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, I18nConstant.I18N_ERROR_OTP_SESSION_EXPIRED);
+		}
+
+		String[] parts = registerValue.split(RegisterConstant.REDIS_STR_DELIMITER);
 		User user = new User();
 		user.setEmail(email);
 		user.setPassword(parts[RegisterConstant.REDIS_STR_INDEX_PASSWORD]);
@@ -82,11 +89,12 @@ public class RegisterService {
 		user.setEnabled(true);
 		userRepository.save(user);
 
-		redisTemplate.delete(key);
+		redisTemplate.delete(otpKey);
+		redisTemplate.delete(registerKey);
 	}
 
 	public void resendOtp(String email, Locale locale) {
-		String key = AppConstant.OTP_PREFIX + email;
+		String key = AppConstant.REGISTER_PREFIX + email;
 		String value = redisTemplate.opsForValue().get(key);
 
 		if (value == null) {
@@ -96,12 +104,10 @@ public class RegisterService {
 			);
 		}
 
-		String[] parts = value.split(RegisterConstant.REDIS_STR_DELIMITER);
-		String encodedPassword = parts[RegisterConstant.REDIS_STR_INDEX_PASSWORD];
-		String name = parts[RegisterConstant.REDIS_STR_INDEX_NAME];
 		String newOtp = otpService.generateOtp();
-		redisTemplate.opsForValue().set(key,
-			encodedPassword + RegisterConstant.REDIS_STR_DELIMITER + newOtp + RegisterConstant.REDIS_STR_DELIMITER + name,
+		redisTemplate.opsForValue().set(
+			AppConstant.OTP_PREFIX + email,
+			newOtp,
 			Duration.ofMinutes(AppConstant.OTP_EXPIRY_MINUTES)
 		);
 

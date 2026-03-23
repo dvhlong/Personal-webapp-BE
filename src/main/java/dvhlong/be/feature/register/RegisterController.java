@@ -1,5 +1,6 @@
 package dvhlong.be.feature.register;
 
+import dvhlong.be.common.dto.ResendOtpRequest;
 import dvhlong.be.common.dto.VerifyOtpRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +30,8 @@ public class RegisterController {
 	}
 
 	@PostMapping("/resend-otp")
-	public ResponseEntity<Void> resendOtp(@RequestParam String email, Locale locale) {
-		registerService.resendOtp(email, locale);
+	public ResponseEntity<Void> resendOtp(@Valid @RequestBody ResendOtpRequest request, Locale locale) {
+		registerService.resendOtp(request.email(), locale);
 		return ResponseEntity.ok().build();
 	}
 }

@@ -16,7 +16,9 @@ import org.springframework.web.server.ResponseStatusException;
 import dvhlong.be.common.constant.AppConstant;
 import dvhlong.be.common.dto.MessageResponse;
 import jakarta.validation.ConstraintViolation;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -61,5 +63,17 @@ public class GlobalExceptionHandler {
 			.toList();
 
 		return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+	}
+
+	@ExceptionHandler(Exception.class)
+	public ResponseEntity<List<MessageResponse>> handleGenericException(Exception ex) throws Exception {
+		if (ex instanceof ResponseStatusException
+			|| ex instanceof ErrorResponseException
+			|| ex instanceof MethodArgumentNotValidException) {
+			throw ex;
+		}
+		log.error("Unexpected error: {}", ex.getMessage(), ex);
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+			.body(List.of(new MessageResponse(null, "error.server.internal", null)));
 	}
 }
