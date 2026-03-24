@@ -1,0 +1,54 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  BE_IMAGE: be-app:$CI_COMMIT_SHORT_SHA
+  CONTAINER_NAME: be-app
+
+build:
+  stage: build
+  image: docker:24
+  services:
+    - docker:24-dind
+  script:
+    - docker build -t $BE_IMAGE .
+  only:
+    - release
+  tags:
+    - macbook
+
+deploy:
+  stage: deploy
+  image: docker:24
+  services:
+    - docker:24-dind
+  needs: [build]
+  script:
+    - docker stop $CONTAINER_NAME || true
+    - docker rm $CONTAINER_NAME || true
+    - docker run -d
+        --name $CONTAINER_NAME
+        -p 8599:8080
+        --restart unless-stopped
+        -e SPRING_DATASOURCE_URL=$SPRING_DATASOURCE_URL
+        -e SPRING_DATASOURCE_USERNAME=$SPRING_DATASOURCE_USERNAME
+        -e SPRING_DATASOURCE_PASSWORD=$SPRING_DATASOURCE_PASSWORD
+        -e SPRING_DATA_REDIS_HOST=$SPRING_DATA_REDIS_HOST
+        -e SPRING_DATA_REDIS_PORT=$SPRING_DATA_REDIS_PORT
+        -e SPRING_DATA_REDIS_PASSWORD=$SPRING_DATA_REDIS_PASSWORD
+        -e SPRING_MAIL_HOST=$SPRING_MAIL_HOST
+        -e SPRING_MAIL_PORT=$SPRING_MAIL_PORT
+        -e SPRING_MAIL_USERNAME=$SPRING_MAIL_USERNAME
+        -e SPRING_MAIL_PASSWORD=$SPRING_MAIL_PASSWORD
+        -e SPRING_MAIL_FROM=$SPRING_MAIL_FROM
+        -e SPRING_JPA_HIBERNATE_DDL_AUTO=$SPRING_JPA_HIBERNATE_DDL_AUTO
+        -e SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH=true
+        -e SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE=true
+        -e SERVER_ADDRESS=0.0.0.0
+        -e SPRING_WEB_CORS_ALLOWED_ORIGINS=http://localhost:4599
+        $BE_IMAGE
+  only:
+    - release
+  tags:
+    - macbook
