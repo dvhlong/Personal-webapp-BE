@@ -8,9 +8,6 @@ variables:
 
 build:
   stage: build
-  image: docker:24
-  services:
-    - docker:24-dind
   script:
     - docker build -t $BE_IMAGE .
   only:
@@ -20,9 +17,6 @@ build:
 
 deploy:
   stage: deploy
-  image: docker:24
-  services:
-    - docker:24-dind
   needs: [build]
   script:
     - docker stop $CONTAINER_NAME || true
