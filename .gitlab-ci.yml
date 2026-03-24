@@ -1,6 +1,7 @@
 stages:
   - build
   - deploy
+  - notify
 
 variables:
   BE_IMAGE: be-app:$CI_COMMIT_SHORT_SHA
@@ -42,7 +43,39 @@ deploy:
         -e SERVER_ADDRESS=0.0.0.0
         -e SPRING_WEB_CORS_ALLOWED_ORIGINS=http://localhost:4599
         $BE_IMAGE
+    - docker images be-app --format "{{.Tag}}" | grep -v $CI_COMMIT_SHORT_SHA | xargs -I {} docker rmi be-app:{} || true
   only:
     - release
   tags:
     - macbook
+
+notify-success:
+  stage: notify
+  needs: [deploy]
+  script:
+    - |
+      curl -X POST $SLACK_WEBHOOK_URL \
+      -H 'Content-type: application/json' \
+      --data "{
+        \"text\": \"✅ *BE Deploy Successful*\n- Branch: $CI_COMMIT_REF_NAME\n- Commit: $CI_COMMIT_SHORT_SHA\n- By: $CI_COMMIT_AUTHOR\n- URL: http://localhost:8599\"
+      }"
+  only:
+    - release
+  tags:
+    - macbook
+  when: on_success
+
+notify-failure:
+  stage: notify
+  script:
+    - |
+      curl -X POST $SLACK_WEBHOOK_URL \
+      -H 'Content-type: application/json' \
+      --data "{
+        \"text\": \"❌ *BE Deploy failed*\n- Branch: $CI_COMMIT_REF_NAME\n- Commit: $CI_COMMIT_SHORT_SHA\n- By: $CI_COMMIT_AUTHOR\n- Pipeline: $CI_PIPELINE_URL\"
+      }"
+  only:
+    - release
+  tags:
+    - macbook
+  when: on_failure
