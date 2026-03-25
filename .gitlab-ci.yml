@@ -16,6 +16,15 @@ build:
   tags:
     - macbook
 
+build-windows:
+  stage: build
+  script:
+    - docker build -t $env:BE_IMAGE .
+  only:
+    - release
+  tags:
+    - windows
+
 deploy:
   stage: deploy
   needs: [build]
@@ -48,6 +57,45 @@ deploy:
   tags:
     - macbook
 
+deploy-windows:
+  stage: deploy
+  needs: [build-windows]
+  script:
+    - docker stop $env:CONTAINER_NAME; if ($LASTEXITCODE -ne 0) { $true }
+    - docker rm $env:CONTAINER_NAME; if ($LASTEXITCODE -ne 0) { $true }
+    - |
+      docker run -d `
+        --name $env:CONTAINER_NAME `
+        -p "${env:SERVER_PORT}:${env:SERVER_PORT}" `
+        --restart unless-stopped `
+        -e SPRING_PROFILES_ACTIVE=prod `
+        -e POSTGRES_URL=$env:POSTGRES_URL `
+        -e POSTGRES_USER=$env:POSTGRES_USER `
+        -e POSTGRES_PASS=$env:POSTGRES_PASS `
+        -e REDIS_HOST=$env:REDIS_HOST `
+        -e REDIS_PORT=$env:REDIS_PORT `
+        -e REDIS_PASS=$env:REDIS_PASS `
+        -e MAIL_HOST=$env:MAIL_HOST `
+        -e MAIL_PORT=$env:MAIL_PORT `
+        -e MAIL_USERNAME=$env:MAIL_USERNAME `
+        -e MAIL_PASSWORD=$env:MAIL_PASSWORD `
+        -e MAIL_FROM=$env:MAIL_FROM `
+        -e SERVER_ADDRESS=$env:SERVER_ADDRESS `
+        -e SERVER_PORT=$env:SERVER_PORT `
+        -e CORS_ALLOWED_ORIGINS=$env:CORS_ALLOWED_ORIGINS `
+        $env:BE_IMAGE
+    - |
+      $tags = docker images be-app --format "{{.Tag}}"
+      foreach ($tag in $tags) {
+        if ($tag -ne $env:CI_COMMIT_SHORT_SHA) {
+          docker rmi "be-app:$tag"
+        }
+      }
+  only:
+    - release
+  tags:
+    - windows
+
 notify-success:
   stage: notify
   needs: [deploy]
@@ -64,6 +112,19 @@ notify-success:
     - macbook
   when: on_success
 
+notify-success-windows:
+  stage: notify
+  needs: [deploy-windows]
+  script:
+    - |
+      $body = '{"text": "✅ *BE Deploy Successful*\n- Branch: ' + $env:CI_COMMIT_REF_NAME + '\n- Commit: ' + $env:CI_COMMIT_SHORT_SHA + '\n- By: ' + $env:CI_COMMIT_AUTHOR + '\n- URL: http://localhost:' + $env:SERVER_PORT + '"}'
+      Invoke-RestMethod -Uri $env:SLACK_WEBHOOK_URL -Method Post -ContentType 'application/json' -Body $body
+  only:
+    - release
+  tags:
+    - windows
+  when: on_success
+
 notify-failure:
   stage: notify
   script:
@@ -77,4 +138,16 @@ notify-failure:
     - release
   tags:
     - macbook
+  when: on_failure
+
+notify-failure-windows:
+  stage: notify
+  script:
+    - |
+      $body = '{"text": "❌ *BE Deploy failed*\n- Branch: ' + $env:CI_COMMIT_REF_NAME + '\n- Commit: ' + $env:CI_COMMIT_SHORT_SHA + '\n- By: ' + $env:CI_COMMIT_AUTHOR + '\n- Pipeline: ' + $env:CI_PIPELINE_URL + '"}'
+      Invoke-RestMethod -Uri $env:SLACK_WEBHOOK_URL -Method Post -ContentType 'application/json' -Body $body
+  only:
+    - release
+  tags:
+    - windows
   when: on_failure
