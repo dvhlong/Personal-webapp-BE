@@ -12,6 +12,9 @@ public final class I18nConstant {
 	public static final String I18N_ERROR_OTP_EXPIRED = "MESSAGE.ERROR.OTP_EXPIRED";
 	public static final String I18N_ERROR_OTP_INVALID = "MESSAGE.ERROR.OTP_INVALID";
 	public static final String I18N_ERROR_OTP_SESSION_EXPIRED = "MESSAGE.ERROR.OTP_SESSION_EXPIRED";
+	public static final String I18N_ERROR_LOGIN_FAILED = "MESSAGE.ERROR.LOGIN_FAILED";
+	public static final String I18N_ERROR_ACCOUNT_DISABLED = "MESSAGE.ERROR.ACCOUNT_DISABLED";
+	public static final String I18N_ERROR_REFRESH_TOKEN_INVALID = "MESSAGE.ERROR.REFRESH_TOKEN_INVALID";
 
 	public static final String I18N_EMAIL_OTP_SUBJECT = "email.otp.subject";
 	public static final String I18N_EMAIL_OTP_BODY = "email.otp.body";

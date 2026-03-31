@@ -8,6 +8,7 @@ public final class AppConstant {
 	public static final String OTP_ALLOWED_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	public static final String OTP_PREFIX = "otp:";
 	public static final String REGISTER_PREFIX = "register:";
+	public static final String REFRESH_TOKEN_PREFIX = "refresh:";
 	public static final long REGISTER_EXPIRY_MINUTES = 5;
 	public static final long OTP_EXPIRY_MINUTES = 1;
 	public static final int OTP_LENGTH = 6;
